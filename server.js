@@ -76,7 +76,7 @@ async function init(){
                 console.log('');
                 console.log('Adding an Employee');
                 console.log('');
-                // addEmployee();
+                addEmployee();
                     break;
 
                 case "Update an employee role":
@@ -196,53 +196,78 @@ async function init(){
         });    
     }
 
+    addEmployee = async () => {
+        try {
+          let roleOptions = [];
+          console.log('\n\n');
+          console.log('Retrieving role options...');
+      
+          const [rows, fields] = await db.promise().query('SELECT title as name, id as value FROM roles');
+          console.log('\n\n');
+          console.log('Role options:', rows);
+      
+          if (rows.length === 0) {
+            console.log('\n\n');
+            console.log('Cannot add an employee because no roles are available.');
+            return;
+          }
+      
+          roleOptions = rows;
+      
+          let employeeOptions = [];
+          console.log('\n\n');
+          console.log('Retrieving employee options...');
+      
+          const [rows2, fields2] = await db.promise().query('SELECT CONCAT(first_name, " ", last_name) as name, id as value FROM employees');
+          console.log('\n\n');
+          console.log('Employee options:', rows2);
+      
+          const noneManager = { name: 'None', value: null };
+          employeeOptions = [...rows2, noneManager];
+      
+          const answers = await inquirer.prompt([
+            {
+              type: 'input',
+              message: "What is the employee's first name?",
+              name: 'firstName',
+            },
+            {
+              type: 'input',
+              message: "What is the employee's last name?",
+              name: 'lastName',
+            },
+            {
+              type: 'list',
+              message: "What is the employee's role?",
+              name: 'roleID',
+              choices: roleOptions,
+            },
+            {
+              type: 'list',
+              message: "Who is this employee's manager?",
+              name: 'managerID',
+              choices: employeeOptions,
+            },
+          ]);
+      
+          console.log('\n\n');
+          console.log('Adding employee to database...');
+          await db.promise().execute(
+            'INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)',
+            [answers.firstName, answers.lastName, answers.roleID, answers.managerID]
+          );
+          console.log('\n\n');
+          console.log('Employee added successfully!');
+        } catch (err) {
+          console.log('\n\n');
+          console.error(err);
+        }
+        init();
+      }
 
     
 
-    // const addEmployee = () => {
-    //      db.promise().query('SELECT id, title From roles')
-    //     .then( ([rows,fields]) => {
-    //         if(rows.length === 0){
-    //             console.log('Cannot add an employee.');
-    //             return;
-    //         }else{
-    //             //console.log(rows);
-    
-    //             inquirer.prompt([{
-    //                 type: "input",
-    //                 message: "What is the employee's first name?",
-    //                 name: "firstName"
-            
-    //             },
-    //             {
-    //                 type: "input",
-    //                 message: "What is the employee's last name?",
-    //                 name: "lastName"
-            
-    //             },
-    //             {
-    //                 type: "list",
-    //                 message: "What is the employee's role?",
-    //                 name: "employeeRole",
-    //                 choices: rollChoices
-    //             }])
-    //             .then(answers => {
-    //                 console.log(answers);
-    //                 db.execute('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)',
-    //                 [answers.roleName, answers.salary, answers.deptID], 
-    //                 function(err, results,fields){
-    //                     if(err){
-    //                         console.error(err);
-    //                     }
-    //                     //console.log(rows);
-    //                     //console.log(fields);
-    //                 });
 
-    //                 init();
-    //             });
-    //         }
-    //     });    
-    // }
 
     const viewByManager = () => {
         db.promise().query("SELECT CONCAT(m.first_name, ' ',  m.last_name) AS manager, e.id, e.first_name, e.last_name FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL")
