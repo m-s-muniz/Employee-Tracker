@@ -21,28 +21,46 @@ async function init(){
             switch(answers.options){
                 case "View all departments": 
                 console.log('');
-                console.log('viewing departments');
+                console.log('Viewing departments');
                 console.log('');
                 viewDepts();
                     break;
 
                 case "View all roles": 
                 console.log('');
-                console.log('viewing roles');
+                console.log('Viewing roles');
                 console.log('');
                 viewRoles();
                     break;
 
                 case "View all employees":         
                 console.log('');                 
-                console.log('viewing employees');
+                console.log('Viewing employees');
                 console.log('');
                 viewEmployees();
                     break;
 
+                    
+                case "View all employees by manager":         
+                console.log('');                 
+                console.log('Viewing employees by manager');
+                console.log('');
+                viewByManager();
+                    break;
+
+                case "View all employees by department":         
+                console.log('');                 
+                console.log('Viewing employees by department');
+                console.log('');
+                viewByDepartment();
+                    break;
+                
+
+
+
                 case "Add a department": 
                 console.log('');
-                console.log('adding a department');
+                console.log('Adding a department');
                 console.log('');
                 addDept();
                     break;
@@ -55,18 +73,27 @@ async function init(){
                     break;
 
                 case "Add an employee":
-                    console.log('Adding an Employee');
+                console.log('');
+                console.log('Adding an Employee');
+                console.log('');
+                // addEmployee();
                     break;
 
                 case "Update an employee role":
-                    console.log('Updating employee role');
+                console.log('');
+                console.log('Updating Employee Role');
+                console.log('');
+                // updateEmployeeRole();
                     break;
+
+
 
 
 
                 default:
-                     console.log('Exiting program');
-                     db.end();
+                console.log('');
+                console.log('Exiting program');
+                db.end();
                 break;
                         
 
@@ -77,14 +104,14 @@ async function init(){
 
 
 
-const viewDepts = () => {
+    const viewDepts = () => {
     db.query(`SELECT * FROM department`, (err, results) => {
         err ? console.error(err) : console.table(results);
         init();
     })
 };
 
-const viewRoles = () => {
+    const viewRoles = () => {
     db.query(`SELECT * FROM roles`, (err, results) => {
         err ? console.error(err) : console.table(results);
          init();
@@ -128,7 +155,7 @@ const viewRoles = () => {
          db.promise().query('SELECT name, id as value FROM department')
         .then( ([rows,fields]) => {
             if(rows.length === 0){
-                console.log('Cannot add a role because no departments are available for the role.');
+                console.log('Cannot add a role, no departments exits for the role.');
                 return;
             }else{
                 //console.log(rows);
@@ -159,7 +186,7 @@ const viewRoles = () => {
                         if(err){
                             console.error(err);
                         }
-                        //console.log(results);
+                        //console.log(rows);
                         //console.log(fields);
                     });
 
@@ -169,10 +196,79 @@ const viewRoles = () => {
         });    
     }
 
-    
+
     
 
+    // const addEmployee = () => {
+    //      db.promise().query('SELECT id, title From roles')
+    //     .then( ([rows,fields]) => {
+    //         if(rows.length === 0){
+    //             console.log('Cannot add an employee.');
+    //             return;
+    //         }else{
+    //             //console.log(rows);
+    
+    //             inquirer.prompt([{
+    //                 type: "input",
+    //                 message: "What is the employee's first name?",
+    //                 name: "firstName"
+            
+    //             },
+    //             {
+    //                 type: "input",
+    //                 message: "What is the employee's last name?",
+    //                 name: "lastName"
+            
+    //             },
+    //             {
+    //                 type: "list",
+    //                 message: "What is the employee's role?",
+    //                 name: "employeeRole",
+    //                 choices: rollChoices
+    //             }])
+    //             .then(answers => {
+    //                 console.log(answers);
+    //                 db.execute('INSERT INTO roles (title, salary, department_id) VALUES (?,?,?)',
+    //                 [answers.roleName, answers.salary, answers.deptID], 
+    //                 function(err, results,fields){
+    //                     if(err){
+    //                         console.error(err);
+    //                     }
+    //                     //console.log(rows);
+    //                     //console.log(fields);
+    //                 });
 
+    //                 init();
+    //             });
+    //         }
+    //     });    
+    // }
+
+    const viewByManager = () => {
+        db.promise().query("SELECT CONCAT(m.first_name, ' ',  m.last_name) AS manager, e.id, e.first_name, e.last_name FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL")
+        .then( ([rows,fields]) => {
+            if(rows.length === 0){
+                console.log('There are no results.');
+            }else{
+                console.table(rows);
+            }
+            init();
+        });
+    }
+    
+
+    const viewByDepartment = () => {
+        db.promise().query("SELECT d.name AS `Department`, CONCAT(e.first_name,' ', e.last_name) AS Employee, r.title FROM employees e JOIN roles r ON r.id = e.role_id JOIN department d ON d.id = r.department_id ORDER BY d.name, r.title")
+        .then( ([rows,fields]) => {
+            if(rows.length === 0){
+                console.log('There are no results.');
+            }else{
+                console.table(rows);
+            }
+            init();
+        });
+    }
+    
     
     
     (async ()=> {

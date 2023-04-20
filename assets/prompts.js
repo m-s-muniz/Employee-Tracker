@@ -6,6 +6,8 @@ const startMenu = [
         choices: ["View all departments",
                     "View all roles",
                     "View all employees",
+                    "View all employees by manager",
+                    "View all employees by department",
                     "Add a department",
                     "Add a role",
                     "Add an employee",
