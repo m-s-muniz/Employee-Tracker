@@ -13,6 +13,10 @@ const startMenu = [
                     "Add an employee",
                     "Update an employee role",
                     "Update an employee manager",
+                    "Delete a department",
+                    "Delete a role",
+                    "Delete an employee",
+                    "View budget",
                     "Exit"
                 ],
         loop: true,

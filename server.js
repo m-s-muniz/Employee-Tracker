@@ -93,10 +93,33 @@ async function init(){
                 updateEmployeeManager();
                      break;
         
+                case "Delete a department":
+                console.log('');
+                console.log('Deleting a department');
+                console.log('');
+                      deleteDepartment();
+                           break;
 
+                case "Delete a role":
+                console.log('');
+                console.log('Deleting a role');
+                console.log('');
+                      deleteRole();
+                            break;
+            
+                case "Delete an employee":
+                console.log('');
+                console.log('Deleting an employee');
+                console.log('');
+                      deleteEmployee();
+                           break;
 
-
-
+                case "View budget":
+                console.log('');
+                console.log('Viewing the budget');
+                console.log('');
+                      viewBudget();
+                            break;
 
                 default:
                 console.log('');
@@ -208,12 +231,10 @@ async function init(){
     addEmployee = async () => {
         try {
           let roleOptions = [];
-          console.log('\n\n');
-          console.log('Retrieving role options...');
+
       
           const [rows, fields] = await db.promise().query('SELECT title as name, id as value FROM roles');
-          console.log('\n\n');
-          console.log('Role options:', rows);
+
       
           if (rows.length === 0) {
             console.log('\n\n');
@@ -224,12 +245,10 @@ async function init(){
           roleOptions = rows;
       
           let employeeOptions = [];
-          console.log('\n\n');
-          console.log('Retrieving employee options...');
+
       
           const [rows2, fields2] = await db.promise().query('SELECT CONCAT(first_name, " ", last_name) as name, id as value FROM employees');
-          console.log('\n\n');
-          console.log('Employee options:', rows2);
+
       
           const noneManager = { name: 'None', value: null };
           employeeOptions = [...rows2, noneManager];
@@ -378,12 +397,190 @@ async function init(){
         });
     }
     
+      const deleteDepartment = () => {
+      let existing;
+      let deleteable;
+  
+      db.promise().query(`SELECT id, name as 'Department Name' FROM department`)
+      .then( ([rows, fields]) => {
+          if(rows.length === 0){
+              console.log('\n\n');
+              console.log(kleur.red('There are no results.'));
+          }else{
+              console.log('\n\n');
+              console.table(rows);
+              existing = rows;
+              return existing;
+          }
+      });
+  
+           inquirer.prompt(
+          {
+              type:'number',
+              message:'Which department do you want to delete. (number only)',
+              name: 'departmentID',
+              choices: existing
+          }
+      )
+      .then((answers) =>{
+          //console.log(answers);
+          deleteable = answers.departmentID
+          db.execute('DELETE FROM department WHERE id = ?',
+          [deleteable], 
+          function(err, results,fields){
+              if(err){
+                  console.error(err);
+              }
+              console.log('\n\n');
+              //console.log(results);
+              //console.log(fields);
+              console.log('Department has been deleted.');
+      });
+      db.unprepare();
+      init();
+      });
+  
+ 
+  
+  }
+
     
+    const deleteRole = () => {
+    let existing;
+    let deleteable;
+
+    db.promise().query(`SELECT 
+        r.id, 
+        r.title, 
+        r.salary,
+        CONCAT(e.first_name, ' ', e.last_name) AS 'Assigned Employee'
+        FROM employees e
+        LEFT JOIN roles r ON e.role_id = r.id
+        ORDER BY r.id`)
+    .then( ([rows, fields]) => {
+        if(rows.length === 0){
+            console.log('\n\n');
+            console.log(kleur.red('There are no results.'));
+        }else{
+            console.log('\n\n');
+            console.table(rows);
+            existing = rows;
+            return existing;
+        }
+    });
+
+    inquirer.prompt(
+        {
+            type:'number',
+            message:'Which role do you want to delete. (number only)',
+            name: 'roleID',
+            choices: existing
+        }
+    )
+    .then((answers) =>{
+        //console.log(answers);
+        deleteable = answers.roleID;
+        db.execute('DELETE FROM roles WHERE id = ?',
+        [deleteable], 
+        function(err, results,fields){
+            if(err){
+                console.error(err);
+            }
+            console.log('\n\n');
+            //console.log(results);
+            //console.log(fields);
+            console.log('Role has been deleted.');
+    });
+    db.unprepare();
+    init();
+    });
+
+
+
+}
+
+  const deleteEmployee = () => {
+    let existing;
+    let deleteable;
+
+      db.promise().query(`SELECT 
+        e.id,
+        CONCAT(e.first_name, ' ', e.last_name) AS 'Employee Name', 
+        r.title, 
+        r.salary,
+        CONCAT(e2.first_name, ' ', e2.last_name) AS 'Manager Name'
+        FROM employees e
+        LEFT JOIN roles r ON e.role_id = r.id
+        LEFT JOIN employees e2 ON e2.manager_id = e.id
+        ORDER BY e.id`)
+    .then( ([rows, fields]) => {
+        if(rows.length === 0){
+            console.log('\n\n');
+            console.log(kleur.red('There are no results.'));
+        }else{
+            console.log('\n\n');
+            console.table(rows);
+            existing = rows;
+            return existing;
+        }
+    });
+
+        inquirer.prompt(
+        {
+            type:'number',
+            message:'Which employee do you want to delete. (number only)',
+            name: 'employeeID',
+            choices: existing
+        }
+    )
+    .then((answers) =>{
+        //console.log(answers);
+        deleteable = answers.employeeID;
+        db.execute('DELETE FROM employees WHERE id = ?',
+        [deleteable], 
+        function(err, results,fields){
+            if(err){
+                console.error(err);
+            }
+            console.log('\n\n');
+            //console.log(results);
+            //console.log(fields);
+            console.log('Employee has been deleted.');
+    });
+    db.unprepare();
+    init();
+    });
+
+
+
+}
+
+    const viewBudget = () =>{
+    db.promise().query(`SELECT 
+      d.name AS 'Department',
+      SUM(r.salary) AS 'Budget'
+      FROM roles r 
+      JOIN department d ON r.department_id = d.id 
+      GROUP BY d.name`)
+  .then( ([rows,fields]) => {
+      if(rows.length === 0){
+          console.log('\n\n');
+          console.log('There are no results.');
+      }else{
+          console.log('\n\n');
+          console.table(rows);
+      }
+      init();
+  });
+}
+
+
     
     (async ()=> {
         await init();
         
     })();
+
     
 
 
