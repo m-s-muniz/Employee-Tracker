@@ -11,6 +11,8 @@ const startMenu = [
                     "Add a department",
                     "Add a role",
                     "Add an employee",
+                    "Update an employee role",
+                    "Update an employee manager",
                     "Exit"
                 ],
         loop: true,

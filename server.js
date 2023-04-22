@@ -83,8 +83,16 @@ async function init(){
                 console.log('');
                 console.log('Updating Employee Role');
                 console.log('');
-                // updateEmployeeRole();
+                updateEmployeeRole();
                     break;
+
+                case "Update an employee manager":
+                console.log('');
+                console.log('Updating Employee Manager');
+                console.log('');
+                updateEmployeeManager();
+                     break;
+        
 
 
 
@@ -102,7 +110,7 @@ async function init(){
 }
 
 
-
+    // View Departments
 
     const viewDepts = () => {
     db.query(`SELECT * FROM department`, (err, results) => {
@@ -110,21 +118,22 @@ async function init(){
         init();
     })
 };
-
+    // View Roles
     const viewRoles = () => {
     db.query(`SELECT * FROM roles`, (err, results) => {
         err ? console.error(err) : console.table(results);
          init();
         })
     };
-    
+    // View Employees
     const viewEmployees = () => {
         db.query(`SELECT * FROM employees`, (err, results) => {
             err ? console.error(err) : console.table(results);
             init();
         })
     };
-    
+
+    // Add a Department
     const addDept = () => {
         inquirer.prompt([
 
@@ -149,7 +158,7 @@ async function init(){
             })
     };
 
-
+        // Add a Role
 
     const addRole = () => {
          db.promise().query('SELECT name, id as value FROM department')
@@ -195,7 +204,7 @@ async function init(){
             }
         });    
     }
-
+      // Add employee
     addEmployee = async () => {
         try {
           let roleOptions = [];
@@ -265,9 +274,84 @@ async function init(){
         init();
       }
 
-    
+
+      // Update an employee role
+    updateEmployeeRole = () => {
+    inquirer.prompt([
+      {
+        name: "employeeID",
+        type: "number",
+        message: "Please enter the employee id associated with the employee you want to update role in the database. Enter ONLY numbers."
+      },
+      {
+        name: "newRoleID",
+        type: "number",
+        message: "Please enter the new role number id associated with the employee you want to update in the database. Enter ONLY numbers."
+      }
+    ]).then(function (response) {
+      // Update the employee's role in the database
+      const updateQuery = `UPDATE employees SET role_id = ? WHERE id = ?`;
+      db.query(updateQuery, [response.newRoleID, response.employeeID], function (err, data) {
+        if (err) throw err;
+        console.log(`The employee with ID ${response.employeeID} has been updated to the new role with ID ${response.newRoleID} successfully.`);
+  
+        // Show the updated list of employees
+        const selectQuery = `SELECT e.id, e.first_name, e.last_name, r.title, d.name as department, r.salary FROM employees e JOIN roles r ON e.role_id = r.id JOIN department d ON r.department_id = d.id`;
+        db.query(selectQuery, (err, result) => {
+          if (err) {
+            console.error(err);
+            init();
+            return;
+          }
+          console.table(result);
+          init();
+        });
+      });
+    });
+  };
 
 
+
+        // Update employee manager
+        updateEmployeeManager = () => {
+        inquirer.prompt([
+      {
+        name: "employeeID",
+        type: "number",
+        message: "Please enter the employee id associated with the employee you want to update role in the database. Enter ONLY numbers."
+      },
+      {
+        name: "newManagerID",
+        type: "number",
+        message: "Please enter the new manager id associated with the employee you want to update in the database. Enter ONLY numbers."
+      }
+    ]).then(function (response) {
+      // Update the employee's manager in the database
+      const updateQuery = `UPDATE employees SET manager_id = ? WHERE id = ?`;
+      db.query(updateQuery, [response.employeeID, response.newManagerID], function (err, data) {
+        if (err) throw err;
+        console.log(`The employee with ID ${response.employeeID} has been updated to the new role with ID ${response.newManagerID} successfully.`);
+  
+        // Show the updated list of employees
+        const selectQuery = `SELECT e.id, e.first_name, e.last_name, e.role_id, r.title, CONCAT(e2.first_name, ' ',e2.last_name) AS manager FROM employees e LEFT JOIN roles r on e.role_id = r.id LEFT JOIN employees e2 ON e2.manager_id = e.id`;
+        db.query(selectQuery, (err, result) => {
+          if (err) {
+            console.error(err);
+            init();
+            return;
+          }
+          console.table(result);
+          init();
+        });
+      });
+    });
+  };
+
+
+
+
+
+        // View employee by manager
 
     const viewByManager = () => {
         db.promise().query("SELECT CONCAT(m.first_name, ' ',  m.last_name) AS manager, e.id, e.first_name, e.last_name FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.manager_id IS NOT NULL")
@@ -280,10 +364,10 @@ async function init(){
             init();
         });
     }
-    
+        // View employee by department
 
     const viewByDepartment = () => {
-        db.promise().query("SELECT d.name AS `Department`, CONCAT(e.first_name,' ', e.last_name) AS Employee, r.title FROM employees e JOIN roles r ON r.id = e.role_id JOIN department d ON d.id = r.department_id ORDER BY d.name, r.title")
+        db.promise().query("SELECT d.name AS Department, CONCAT(e.first_name,' ', e.last_name) AS Employee, r.Title FROM employees e JOIN roles r ON r.id = e.role_id JOIN department d ON d.id = r.department_id ORDER BY d.name, r.title")
         .then( ([rows,fields]) => {
             if(rows.length === 0){
                 console.log('There are no results.');
@@ -301,3 +385,5 @@ async function init(){
         
     })();
     
+
+
